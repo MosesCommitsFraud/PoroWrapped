@@ -71,8 +71,20 @@ export default async function ProfilePage({ params }: PageProps) {
 
             // Fetch Mastery
             let mastery: any[] = [];
+            let championDetails: Record<number, any> = {};
+
             try {
                   mastery = await getChampionMastery(account.puuid);
+                  // Fetch champion data to map IDs to Names/Images
+                  // Optimally this should be cached or static, but for now we fetch it if needed or rely on client-side mapping
+                  // Actually, we can fetch the list of champions from DDragon once
+                  const championsRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/data/en_US/champion.json`);
+                  const championsData = await championsRes.json();
+                  
+                  Object.values(championsData.data).forEach((champ: any) => {
+                        championDetails[parseInt(champ.key)] = champ;
+                  });
+
             } catch (e) {
                   console.error('[ProfilePage] Failed to fetch mastery:', e);
             }
@@ -190,25 +202,36 @@ export default async function ProfilePage({ params }: PageProps) {
                                           <div className="p-4 rounded-lg bg-card/50 border border-white/5">
                                                 <h3 className="text-sm font-bold text-muted mb-3 uppercase tracking-wider">Top Mastery</h3>
                                                 <div className="space-y-3">
-                                                      {mastery.map((m: any) => (
-                                                            <div key={m.championId} className="flex items-center gap-3">
-                                                                  {/* We need champion name from ID. Using a placeholder or need to fetch static data. 
-                                                                      For now, let's rely on the fact that we can't easily map ID to Name without the static JSON.
-                                                                      I'll use the ID for the image which usually works if it's the key, but DDragon uses Name for images.
-                                                                      Actually, DDragon images use the 'id' string (e.g. 'Aatrox'), not the key (266).
-                                                                      I will skip the image for now or use a generic placeholder to avoid broken images.
-                                                                      Wait, I can use the static data cache I built in MatchHistory? No, that's client side.
-                                                                      I'll just show the points and level for now.
-                                                                  */}
-                                                                  <div className="w-10 h-10 bg-black rounded-full border border-white/10 flex items-center justify-center text-xs font-bold">
-                                                                        {m.championLevel}
+                                                      {mastery.map((m: any) => {
+                                                            const champ = championDetails[m.championId];
+                                                            const champName = champ ? champ.name : `Champ ${m.championId}`;
+                                                            const champId = champ ? champ.id : null; // The string ID used for images, e.g. "Aatrox"
+
+                                                            return (
+                                                                  <div key={m.championId} className="flex items-center gap-3">
+                                                                        <div className="w-10 h-10 bg-black rounded-full border border-white/10 flex items-center justify-center text-xs font-bold overflow-hidden relative">
+                                                                              {champId ? (
+                                                                                    <img 
+                                                                                          src={`https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/champion/${champId}.png`} 
+                                                                                          alt={champName}
+                                                                                          className="w-full h-full object-cover"
+                                                                                    />
+                                                                              ) : (
+                                                                                    m.championLevel
+                                                                              )}
+                                                                              {champId && (
+                                                                                    <div className="absolute bottom-0 w-full bg-black/60 text-[10px] text-center leading-none py-0.5">
+                                                                                          {m.championLevel}
+                                                                                    </div>
+                                                                              )}
+                                                                        </div>
+                                                                        <div>
+                                                                              <div className="text-sm font-bold text-white">{champName}</div>
+                                                                              <div className="text-xs text-muted">{(m.championPoints / 1000).toFixed(0)}k pts</div>
+                                                                        </div>
                                                                   </div>
-                                                                  <div>
-                                                                        <div className="text-sm font-bold text-white">Champ {m.championId}</div>
-                                                                        <div className="text-xs text-muted">{(m.championPoints / 1000).toFixed(0)}k pts</div>
-                                                                  </div>
-                                                            </div>
-                                                      ))}
+                                                            );
+                                                      })}
                                                 </div>
                                           </div>
                                     )}
