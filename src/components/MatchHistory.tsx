@@ -123,11 +123,13 @@ export default function MatchHistory({ match, puuid, version }: MatchProps) {
 
                                     <div className="flex flex-col gap-1">
                                           <div className="flex gap-1">
-                                                <img src={getSpellImage(participant.summoner1Id) || ''} className="w-5 h-5 rounded bg-black/50" alt="Spell 1" />
-                                                <img src={getSpellImage(participant.summoner2Id) || ''} className="w-5 h-5 rounded bg-black/50" alt="Spell 2" />
+                                                {getSpellImage(participant.summoner1Id) && <img src={getSpellImage(participant.summoner1Id)!} className="w-5 h-5 rounded bg-black/50" alt="Spell 1" />}
+                                                {getSpellImage(participant.summoner2Id) && <img src={getSpellImage(participant.summoner2Id)!} className="w-5 h-5 rounded bg-black/50" alt="Spell 2" />}
                                           </div>
                                           <div className="flex gap-1">
-                                                <img src={getRuneImage(participant.perks.styles[0].style, participant.perks.styles[0].selections[0].perk) || ''} className="w-5 h-5 rounded-full bg-black/50" alt="Rune" />
+                                                {getRuneImage(participant.perks.styles[0].style, participant.perks.styles[0].selections[0].perk) && (
+                                                      <img src={getRuneImage(participant.perks.styles[0].style, participant.perks.styles[0].selections[0].perk)!} className="w-5 h-5 rounded-full bg-black/50" alt="Rune" />
+                                                )}
                                           </div>
                                     </div>
                               </div>

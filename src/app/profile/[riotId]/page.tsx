@@ -8,12 +8,24 @@ import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
+import { REGIONS, RegionKey } from '@/lib/regions';
+
 interface PageProps {
       params: Promise<{ riotId: string }>;
+      searchParams: Promise<{ region?: string }>;
 }
 
-export default async function ProfilePage({ params }: PageProps) {
+export default async function ProfilePage({ params, searchParams }: PageProps) {
       const { riotId } = await params;
+      const { region } = await searchParams;
+      const regionKey = (region?.toUpperCase() || 'EUW') as RegionKey;
+
+      if (!REGIONS[regionKey]) {
+           // Fallback or error if invalid region
+           console.warn(`Invalid region ${region}, defaulting to EUW`);
+      }
+      const selectedRegion = REGIONS[regionKey] ? regionKey : 'EUW';
+
       const decodedRiotId = decodeURIComponent(riotId);
 
       // Parse Name and Tag. Assumes format "Name-Tag"
@@ -29,8 +41,8 @@ export default async function ProfilePage({ params }: PageProps) {
       try {
             // Get latest Data Dragon version first
             const ddragonVersion = await getLatestDataDragonVersion().catch(() => '14.23.1');
-            const account = await getAccountByRiotID(gameName, tagLine);
-            const summoner = await getSummonerByPUUID(account.puuid);
+            const account = await getAccountByRiotID(gameName, tagLine, selectedRegion);
+            const summoner = await getSummonerByPUUID(account.puuid, selectedRegion);
 
             let summonerId = summoner.id;
 
@@ -39,9 +51,9 @@ export default async function ProfilePage({ params }: PageProps) {
             // The ID from match-v5 seems more reliable for these specific accounts.
             // Always try to fetch the ID from the latest match to use for League lookups.
             try {
-                  const matchIds = await getMatchIds(account.puuid, 0, 1);
+                  const matchIds = await getMatchIds(account.puuid, 0, 1, undefined, selectedRegion);
                   if (matchIds.length > 0) {
-                        const lastMatch = await getMatchDetails(matchIds[0]);
+                        const lastMatch = await getMatchDetails(matchIds[0], selectedRegion);
                         const participant = lastMatch.info.participants.find((p: any) => p.puuid === account.puuid);
                         if (participant && participant.summonerId) {
                               summonerId = participant.summonerId;
@@ -56,7 +68,7 @@ export default async function ProfilePage({ params }: PageProps) {
             let rankError = false;
             if (summonerId) {
                   try {
-                        leagueEntries = await getLeagueEntries(summonerId);
+                        leagueEntries = await getLeagueEntries(summonerId, selectedRegion);
                   } catch (err) {
                         console.error('[ProfilePage] Failed to fetch league entries:', err);
                         rankError = true;
@@ -64,8 +76,8 @@ export default async function ProfilePage({ params }: PageProps) {
             }
 
             // Fetch matches (last 20 for now to be fast, can increase later)
-            const matchIds = await getMatchIds(account.puuid, 0, 20);
-            const matches = await Promise.all(matchIds.map(id => getMatchDetails(id)));
+            const matchIds = await getMatchIds(account.puuid, 0, 20, undefined, selectedRegion);
+            const matches = await Promise.all(matchIds.map(id => getMatchDetails(id, selectedRegion)));
 
             const { championStats, playedWith } = aggregateStats(matches, account.puuid);
 
@@ -74,7 +86,7 @@ export default async function ProfilePage({ params }: PageProps) {
             let championDetails: Record<number, any> = {};
 
             try {
-                  mastery = await getChampionMastery(account.puuid);
+                  mastery = await getChampionMastery(account.puuid, selectedRegion);
                   // Fetch champion data to map IDs to Names/Images
                   // Optimally this should be cached or static, but for now we fetch it if needed or rely on client-side mapping
                   // Actually, we can fetch the list of champions from DDragon once

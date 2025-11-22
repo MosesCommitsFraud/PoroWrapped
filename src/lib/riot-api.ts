@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { RateLimiter } from 'limiter';
+import { REGIONS, RegionKey } from './regions';
 
 const API_KEY = process.env.RIOT_API_KEY?.trim();
-const REGION = process.env.RIOT_REGION || 'europe';
-const PLATFORM = process.env.RIOT_PLATFORM || 'euw1';
 
 // Rate limiters
 // 20 requests per 1 second
@@ -11,7 +10,7 @@ const PLATFORM = process.env.RIOT_PLATFORM || 'euw1';
 const secondLimiter = new RateLimiter({ tokensPerInterval: 20, interval: "second" });
 const minuteLimiter = new RateLimiter({ tokensPerInterval: 100, interval: 120000 });
 
-export async function fetchRiotAPI<T>(url: string, region: string = REGION): Promise<T> {
+export async function fetchRiotAPI<T>(url: string): Promise<T> {
       if (!API_KEY) {
             throw new Error('RIOT_API_KEY is not set');
       }
@@ -39,39 +38,44 @@ export async function fetchRiotAPI<T>(url: string, region: string = REGION): Pro
                         console.warn('Rate limit exceeded, retrying after delay...');
                         const retryAfter = parseInt(error.response.headers['retry-after'] || '1', 10);
                         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                        return fetchRiotAPI<T>(url, region);
+                        return fetchRiotAPI<T>(url);
                   }
             }
             throw error;
       }
 }
 
-export async function getAccountByRiotID(gameName: string, tagLine: string) {
-      const url = `https://${REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${gameName}/${tagLine}`;
+export async function getAccountByRiotID(gameName: string, tagLine: string, regionKey: RegionKey = 'EUW') {
+      const region = REGIONS[regionKey].region;
+      const url = `https://${region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${gameName}/${tagLine}`;
       return fetchRiotAPI<{ puuid: string; gameName: string; tagLine: string }>(url);
 }
 
-export async function getSummonerByPUUID(puuid: string) {
-      const url = `https://${PLATFORM}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-      return fetchRiotAPI<any>(url, PLATFORM);
+export async function getSummonerByPUUID(puuid: string, regionKey: RegionKey = 'EUW') {
+      const platform = REGIONS[regionKey].platform;
+      const url = `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
+      return fetchRiotAPI<any>(url);
 }
 
-export async function getMatchIds(puuid: string, start: number = 0, count: number = 100, queue?: number) {
-      let url = `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
+export async function getMatchIds(puuid: string, start: number = 0, count: number = 100, queue?: number, regionKey: RegionKey = 'EUW') {
+      const region = REGIONS[regionKey].region;
+      let url = `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
       if (queue) {
             url += `&queue=${queue}`;
       }
       return fetchRiotAPI<string[]>(url);
 }
 
-export async function getMatchDetails(matchId: string) {
-      const url = `https://${REGION}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
+export async function getMatchDetails(matchId: string, regionKey: RegionKey = 'EUW') {
+      const region = REGIONS[regionKey].region;
+      const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
       return fetchRiotAPI<any>(url);
 }
 
-export async function getLeagueEntries(summonerId: string) {
-      const url = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
-      return fetchRiotAPI<any[]>(url, PLATFORM);
+export async function getLeagueEntries(summonerId: string, regionKey: RegionKey = 'EUW') {
+      const platform = REGIONS[regionKey].platform;
+      const url = `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
+      return fetchRiotAPI<any[]>(url);
 }
 
 // Helper to aggregate stats from a list of matches
@@ -122,20 +126,20 @@ export function aggregateStats(matches: any[], puuid: string) {
       };
 }
 
-export async function getChampionMastery(puuid: string) {
-      const url = `https://${PLATFORM}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
-      return fetchRiotAPI<any[]>(url, PLATFORM);
+export async function getChampionMastery(puuid: string, regionKey: RegionKey = 'EUW') {
+      const platform = REGIONS[regionKey].platform;
+      const url = `https://${platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
+      return fetchRiotAPI<any[]>(url);
 }
 
 // Test function to debug 403 error
-export async function testRankFetch() {
-      // Faker's Summoner ID (EUW) - just a random high elo player or a known ID if possible.
-      // Actually, let's use a hardcoded known valid ID from a different region or just try to fetch the challenger league to see if permissions work.
+export async function testRankFetch(regionKey: RegionKey = 'EUW') {
+      const platform = REGIONS[regionKey].platform;
       // Fetching Challenger League for Solo Queue
-      const url = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`;
+      const url = `https://${platform}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`;
       try {
             console.log('[RiotAPI] Testing Challenger League fetch...');
-            await fetchRiotAPI(url, PLATFORM);
+            await fetchRiotAPI(url);
             console.log('[RiotAPI] Challenger League fetch SUCCESS');
             return true;
       } catch (e: any) {
