@@ -56,8 +56,11 @@ export async function getSummonerByPUUID(puuid: string) {
       return fetchRiotAPI<any>(url, PLATFORM);
 }
 
-export async function getMatchIds(puuid: string, start: number = 0, count: number = 100) {
-      const url = `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
+export async function getMatchIds(puuid: string, start: number = 0, count: number = 100, queue?: number) {
+      let url = `https://${REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}`;
+      if (queue) {
+            url += `&queue=${queue}`;
+      }
       return fetchRiotAPI<string[]>(url);
 }
 

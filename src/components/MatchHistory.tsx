@@ -74,6 +74,21 @@ export default function MatchHistory({ match, puuid, version }: MatchProps) {
             return null;
       };
 
+      const getQueueName = (queueId: number) => {
+            const queueNames: Record<number, string> = {
+                  420: 'Ranked Solo',
+                  440: 'Ranked Flex',
+                  400: 'Normal Draft',
+                  430: 'Normal Blind',
+                  450: 'ARAM',
+                  490: 'Quickplay',
+                  1700: 'Arena',
+                  1900: 'URF',
+                  900: 'ARURF'
+            };
+            return queueNames[queueId] || 'Normal';
+      };
+
       return (
             <Card className={cn(
                   "mb-2 border-l-4 transition-all overflow-hidden",
@@ -88,7 +103,7 @@ export default function MatchHistory({ match, puuid, version }: MatchProps) {
                                     <span className={cn("font-bold text-sm", isWin ? "text-primary" : "text-red-500")}>
                                           {isWin ? "Victory" : "Defeat"}
                                     </span>
-                                    <span className="text-xs text-muted">{match.info.gameMode}</span>
+                                    <span className="text-xs text-muted whitespace-nowrap">{getQueueName(match.info.queueId)}</span>
                                     <span className="text-xs text-muted">{minutes}:{seconds.toString().padStart(2, '0')}</span>
                               </div>
 

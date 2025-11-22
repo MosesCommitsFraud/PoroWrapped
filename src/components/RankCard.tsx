@@ -39,8 +39,12 @@ export default function RankCard({ queueType, tier, rank, lp, wins, losses, hotS
             <Card className="flex flex-col gap-4 p-4 bg-card/50 border-white/5">
                   <div className="flex items-center gap-4">
                   <div className="w-16 h-16 relative">
+                        {/* 
+                           Using Community Dragon for rank icons.
+                           Path: https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-{tier}.png
+                        */}
                         <img 
-                              src={`https://opgg-static.akamaized.net/images/medals_new/${tier.toLowerCase()}.png`} 
+                              src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tier.toLowerCase()}.png`} 
                               alt={tier}
                               className="w-full h-full object-contain"
                         />

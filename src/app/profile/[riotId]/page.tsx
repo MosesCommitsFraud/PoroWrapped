@@ -1,7 +1,7 @@
 import React from 'react';
 import { getAccountByRiotID, getSummonerByPUUID, getLeagueEntries, getMatchIds, getMatchDetails, aggregateStats, getChampionMastery, testRankFetch, getLatestDataDragonVersion } from '@/lib/riot-api';
 import RankCard from '@/components/RankCard';
-import MatchHistory from '@/components/MatchHistory';
+import MatchList from '@/components/MatchList';
 import ChampionStats from '@/components/ChampionStats';
 import RecentlyPlayedWith from '@/components/RecentlyPlayedWith';
 import { Button } from '@/components/ui/Button';
@@ -53,12 +53,13 @@ export default async function ProfilePage({ params }: PageProps) {
             }
 
             let leagueEntries: any[] = [];
+            let rankError = false;
             if (summonerId) {
                   try {
                         leagueEntries = await getLeagueEntries(summonerId);
                   } catch (err) {
                         console.error('[ProfilePage] Failed to fetch league entries:', err);
-                        // Continue without rank data
+                        rankError = true;
                   }
             }
 
@@ -158,8 +159,11 @@ export default async function ProfilePage({ params }: PageProps) {
                                           />
                                     ) : (
                                           <div className="p-4 rounded-lg bg-card/50 border border-white/5 text-center text-muted">
-                                                Unranked Solo
-                                                <div className="text-xs mt-1 opacity-50">Rank API Restricted</div>
+                                                {rankError ? (
+                                                      <span className="text-red-400">Rank API Error (403/404)</span>
+                                                ) : (
+                                                      "Unranked Solo"
+                                                )}
                                           </div>
                                     )}
 
@@ -215,10 +219,7 @@ export default async function ProfilePage({ params }: PageProps) {
 
                               {/* Right Column: Match History */}
                               <div className="lg:col-span-3 space-y-4">
-                                    <h2 className="text-xl font-bold mb-4">Match History</h2>
-                                    {matches.map((match) => (
-                                          <MatchHistory key={match.metadata.matchId} match={match} puuid={account.puuid} version={ddragonVersion} />
-                                    ))}
+                                    <MatchList initialMatches={matches} puuid={account.puuid} version={ddragonVersion} />
                               </div>
                         </div>
                   </div>
