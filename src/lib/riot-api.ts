@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { RateLimiter } from 'limiter';
 
-const API_KEY = process.env.RIOT_API_KEY;
-const REGION = 'europe'; // Default to europe for routing (americas, asia, europe, sea)
-const PLATFORM = 'euw1'; // Default to euw1 for summoner lookups
+const API_KEY = process.env.RIOT_API_KEY?.trim();
+const REGION = process.env.RIOT_REGION || 'europe';
+const PLATFORM = process.env.RIOT_PLATFORM || 'euw1';
 
 // Rate limiters
 // 20 requests per 1 second
@@ -34,6 +34,7 @@ export async function fetchRiotAPI<T>(url: string, region: string = REGION): Pro
             return response.data;
       } catch (error: any) {
             if (axios.isAxiosError(error)) {
+                  console.error(`[RiotAPI] Error fetching ${url}: ${error.response?.status} ${error.response?.statusText}`);
                   if (error.response?.status === 429) {
                         console.warn('Rate limit exceeded, retrying after delay...');
                         const retryAfter = parseInt(error.response.headers['retry-after'] || '1', 10);
@@ -116,4 +117,26 @@ export function aggregateStats(matches: any[], puuid: string) {
             championStats: Object.values(championStats).sort((a, b) => b.games - a.games),
             playedWith: Object.values(playedWith).sort((a, b) => b.games - a.games).slice(0, 20) // Top 20
       };
+}
+
+export async function getChampionMastery(puuid: string) {
+      const url = `https://${PLATFORM}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
+      return fetchRiotAPI<any[]>(url, PLATFORM);
+}
+
+// Test function to debug 403 error
+export async function testRankFetch() {
+      // Faker's Summoner ID (EUW) - just a random high elo player or a known ID if possible.
+      // Actually, let's use a hardcoded known valid ID from a different region or just try to fetch the challenger league to see if permissions work.
+      // Fetching Challenger League for Solo Queue
+      const url = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`;
+      try {
+            console.log('[RiotAPI] Testing Challenger League fetch...');
+            await fetchRiotAPI(url, PLATFORM);
+            console.log('[RiotAPI] Challenger League fetch SUCCESS');
+            return true;
+      } catch (e: any) {
+            console.error('[RiotAPI] Challenger League fetch FAILED:', e.response?.status);
+            return false;
+      }
 }
