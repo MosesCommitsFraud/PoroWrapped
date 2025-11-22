@@ -75,7 +75,7 @@ export default async function ProfilePage({ params }: PageProps) {
             }
 
             // Debug Rank API
-            await testRankFetch();
+            // await testRankFetch();
 
             // Calculate Fallback Stats
             const totalGames = matches.length;
@@ -148,6 +148,11 @@ export default async function ProfilePage({ params }: PageProps) {
                                                 lp={soloRank.leaguePoints}
                                                 wins={soloRank.wins}
                                                 losses={soloRank.losses}
+                                                hotStreak={soloRank.hotStreak}
+                                                veteran={soloRank.veteran}
+                                                freshBlood={soloRank.freshBlood}
+                                                inactive={soloRank.inactive}
+                                                miniSeries={soloRank.miniSeries}
                                           />
                                     ) : (
                                           <div className="p-4 rounded-lg bg-card/50 border border-white/5 text-center text-muted">
@@ -164,6 +169,11 @@ export default async function ProfilePage({ params }: PageProps) {
                                                 lp={flexRank.leaguePoints}
                                                 wins={flexRank.wins}
                                                 losses={flexRank.losses}
+                                                hotStreak={flexRank.hotStreak}
+                                                veteran={flexRank.veteran}
+                                                freshBlood={flexRank.freshBlood}
+                                                inactive={flexRank.inactive}
+                                                miniSeries={flexRank.miniSeries}
                                           />
                                     ) : (
                                           <div className="p-4 rounded-lg bg-card/50 border border-white/5 text-center text-muted">Unranked Flex</div>

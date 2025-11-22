@@ -153,9 +153,26 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
                                     <TeamTable participants={match.info.participants.filter((p: any) => p.teamId === 100)} teamName="Blue Team" maxDamage={Math.max(...match.info.participants.map((p: any) => p.totalDamageDealtToChampions))} />
 
                                     {/* Objectives */}
-                                    <div className="flex justify-center gap-8 py-2 border-y border-white/5">
-                                          {/* Placeholder for objectives if needed, or just spacing */}
-                                          <span className="text-xs text-muted uppercase tracking-widest">Match Details</span>
+                                    <div className="flex justify-center gap-8 py-4 border-y border-white/5 bg-black/20">
+                                          <div className="flex gap-6 text-xs">
+                                                <div className="flex flex-col items-center gap-1">
+                                                      <span className="text-blue-400 font-bold">Blue Team</span>
+                                                      <div className="flex gap-3 text-muted">
+                                                            <span title="Towers">🏰 {match.info.teams[0].objectives.tower.kills}</span>
+                                                            <span title="Dragons">🐉 {match.info.teams[0].objectives.dragon.kills}</span>
+                                                            <span title="Barons">👾 {match.info.teams[0].objectives.baron.kills}</span>
+                                                      </div>
+                                                </div>
+                                                <div className="w-px bg-white/10 mx-2"></div>
+                                                <div className="flex flex-col items-center gap-1">
+                                                      <span className="text-red-400 font-bold">Red Team</span>
+                                                      <div className="flex gap-3 text-muted">
+                                                            <span title="Towers">🏰 {match.info.teams[1].objectives.tower.kills}</span>
+                                                            <span title="Dragons">🐉 {match.info.teams[1].objectives.dragon.kills}</span>
+                                                            <span title="Barons">👾 {match.info.teams[1].objectives.baron.kills}</span>
+                                                      </div>
+                                                </div>
+                                          </div>
                                     </div>
 
                                     {/* Team 2 */}
