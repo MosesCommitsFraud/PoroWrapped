@@ -1,7 +1,20 @@
 
+import fs from 'fs';
+import path from 'path';
 import axios from 'axios';
 
-// Env vars will be loaded via --env-file flag
+// Load env manually
+const envPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envPath)) {
+      const envConfig = fs.readFileSync(envPath, 'utf-8');
+      envConfig.split('\n').forEach(line => {
+            const [key, value] = line.split('=');
+            if (key && value) {
+                  process.env[key.trim()] = value.trim();
+            }
+      });
+}
+
 const API_KEY = process.env.RIOT_API_KEY?.trim();
 const REGION = process.env.RIOT_REGION || 'europe';
 const PLATFORM = process.env.RIOT_PLATFORM || 'euw1';

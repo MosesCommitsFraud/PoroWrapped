@@ -32,22 +32,22 @@ export default async function ProfilePage({ params }: PageProps) {
 
             let summonerId = summoner.id;
 
-            // Workaround: If summoner.id is missing, try to get it from the last match
-            if (!summonerId) {
-                  console.log('[ProfilePage] Summoner ID missing, attempting to fetch from match history...');
-                  try {
-                        const matchIds = await getMatchIds(account.puuid, 0, 1);
-                        if (matchIds.length > 0) {
-                              const lastMatch = await getMatchDetails(matchIds[0]);
-                              const participant = lastMatch.info.participants.find((p: any) => p.puuid === account.puuid);
-                              if (participant) {
-                                    summonerId = participant.summonerId;
-                                    console.log('[ProfilePage] Found Summoner ID from match:', summonerId);
-                              }
+            // Workaround for 403 Forbidden on League V4:
+            // The ID returned by summoner-v4 sometimes fails (returns 403 on league endpoint). 
+            // The ID from match-v5 seems more reliable for these specific accounts.
+            // Always try to fetch the ID from the latest match to use for League lookups.
+            try {
+                  const matchIds = await getMatchIds(account.puuid, 0, 1);
+                  if (matchIds.length > 0) {
+                        const lastMatch = await getMatchDetails(matchIds[0]);
+                        const participant = lastMatch.info.participants.find((p: any) => p.puuid === account.puuid);
+                        if (participant && participant.summonerId) {
+                              summonerId = participant.summonerId;
+                              console.log('[ProfilePage] Using Summoner ID from match history:', summonerId);
                         }
-                  } catch (err) {
-                        console.error('[ProfilePage] Failed to fetch summoner ID from match history:', err);
                   }
+            } catch (err) {
+                  console.error('[ProfilePage] Failed to fetch summoner ID from match history, falling back to SummonerV4 ID:', err);
             }
 
             let leagueEntries: any[] = [];
