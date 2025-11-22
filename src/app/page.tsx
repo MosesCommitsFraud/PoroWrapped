@@ -5,7 +5,7 @@ import WrappedInput from '@/components/WrappedInput';
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] text-center space-y-12">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center space-y-12 p-6">
       <div className="space-y-6 max-w-3xl">
         <h1 className="text-6xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-white">
           Your League Journey, <br /> Wrapped.

@@ -16,8 +16,9 @@ if (fs.existsSync(envPath)) {
 }
 
 const API_KEY = process.env.RIOT_API_KEY?.trim();
-const REGION = process.env.RIOT_REGION || 'europe';
-const PLATFORM = process.env.RIOT_PLATFORM || 'euw1';
+// Default to EUW params for testing the failing case
+const REGION = 'europe';
+const PLATFORM = 'euw1';
 
 console.log('--- Riot API Test ---');
 console.log(`API Key Present: ${!!API_KEY}`);
@@ -31,102 +32,71 @@ if (!API_KEY) {
 
 async function test() {
       try {
-            // 1. Test Challenger League (Generic Permission Check)
-            console.log('\n1. Testing Challenger League Fetch (Permission Check)...');
-            const challengerUrl = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5`;
-            try {
-                  await axios.get(challengerUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  console.log('✅ SUCCESS: API Key has access to League V4.');
-            } catch (error: any) {
-                  console.error(`❌ FAILED: ${error.response?.status} ${error.response?.statusText}`);
-                  if (error.response?.status === 403) {
-                        console.error('   -> This confirms the API Key does NOT have permission for League V4 endpoints.');
-                        console.error('   -> Personal Keys usually HAVE this. Production keys might need specific approval.');
-                        console.error('   -> Double check you copied the key correctly and it is not expired.');
-                  }
-            }
-
-            // 2. Test Specific Summoner League Fetch (The one that failed)
-            console.log('\n2. Testing Specific Summoner League Fetch...');
             const failingId = 'Hxy9tK3JEZ1ZMY8A-w0HzSPEBx9V0_xpoPZpXAYvEuCyc2nk';
 
-            // A. Check if this ID is valid for Summoner V4
-            console.log('   A. Fetching Summoner Details by ID...');
-            const summonerUrl = `https://${PLATFORM}.api.riotgames.com/lol/summoner/v4/summoners/${failingId}`;
+            // 1. Check Summoner V4 explicitly for the failing ID
+            console.log('\n1. Checking Summoner V4 for ID:', failingId);
             try {
-                  const sumRes = await axios.get(summonerUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  console.log('      ✅ SUCCESS: Summoner found.');
-                  console.log('      -> PUUID:', sumRes.data.puuid);
-            } catch (error: any) {
-                  console.error(`      ❌ FAILED: ${error.response?.status} ${error.response?.statusText}`);
+                  const url = `https://${PLATFORM}.api.riotgames.com/lol/summoner/v4/summoners/${failingId}`;
+                  const res = await axios.get(url, { headers: { 'X-Riot-Token': API_KEY } });
+                  console.log('   ✅ Found Summoner. PUUID:', res.data.puuid);
+                  console.log('   Keys:', Object.keys(res.data));
+            } catch (e: any) {
+                  console.error(`   ❌ Failed: ${e.response?.status} ${e.response?.statusText}`);
             }
 
-            // B. Check League Entries
-            console.log('   B. Fetching League Entries by ID...');
-            const leagueUrl = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/entries/by-summoner/${failingId}`;
+            // 2. Check League V4 for the failing ID on EUW1
+            console.log('\n2. Checking League V4 for ID on EUW1:', failingId);
             try {
-                  const res = await axios.get(leagueUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  console.log('      ✅ SUCCESS: Fetched League Entries.');
-                  console.log('      -> Entries:', res.data.length);
-            } catch (error: any) {
-                  console.error(`      ❌ FAILED: ${error.response?.status} ${error.response?.statusText}`);
+                  const url = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/entries/by-summoner/${failingId}`;
+                  const res = await axios.get(url, { headers: { 'X-Riot-Token': API_KEY } });
+                  console.log('   ✅ Success. Entries:', res.data.length);
+            } catch (e: any) {
+                  console.error(`   ❌ Failed: ${e.response?.status} ${e.response?.statusText}`);
             }
 
-            // 3. Test Workaround Flow (Agurin#EUW)
-            console.log('\n3. Testing Workaround Flow (Agurin#EUW)...');
+            // 3. Check League V4 for the failing ID on EUN1 (Just in case)
+            console.log('\n3. Checking League V4 for ID on EUN1:');
             try {
-                  // 1. Account
-                  const accUrl = `https://${REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/Agurin/EUW`;
+                  const url = `https://eun1.api.riotgames.com/lol/league/v4/entries/by-summoner/${failingId}`;
+                  const res = await axios.get(url, { headers: { 'X-Riot-Token': API_KEY } });
+                  console.log('   ✅ Success on EUN1. Entries:', res.data.length);
+            } catch (e: any) {
+                  console.error(`   ❌ Failed on EUN1: ${e.response?.status} ${e.response?.statusText}`);
+            }
+
+            // 4. Check Match V5 (Correct Region) to see if we can retrieve a fresh ID
+            console.log('\n4. Fetching Account PUUID (Agurin#EUW) to trace fresh ID...');
+            try {
+                  const accUrl = `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/Agurin/EUW`;
                   const accRes = await axios.get(accUrl, { headers: { 'X-Riot-Token': API_KEY } });
                   const puuid = accRes.data.puuid;
-                  console.log('   ✅ Account Found. PUUID:', puuid);
+                  console.log('   PUUID:', puuid);
 
-                  // 2. Summoner (Check if ID is missing)
-                  const sumUrl = `https://${PLATFORM}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${puuid}`;
-                  const sumRes = await axios.get(sumUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  console.log('   ℹ️ Summoner Response Keys:', Object.keys(sumRes.data));
-                  if (!sumRes.data.id) {
-                        console.log('   ⚠️ CONFIRMED: id is missing from Summoner v4 response.');
-                  } else {
-                        console.log('   ✅ id IS present in Summoner v4 response:', sumRes.data.id);
-                  }
-
-                  // 3. Match History
-                  const matchIdsUrl = `https://${PLATFORM}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=1`;
-                  const matchIdsRes = await axios.get(matchIdsUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  const matchId = matchIdsRes.data[0];
-                  console.log('   ✅ Match ID:', matchId);
-
-                  // 4. Match Details
-                  const matchUrl = `https://${PLATFORM}.api.riotgames.com/lol/match/v5/matches/${matchId}`;
+                  const matchUrl = `https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=1`;
                   const matchRes = await axios.get(matchUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                  const participant = matchRes.data.info.participants.find((p: any) => p.puuid === puuid);
+                  const matchId = matchRes.data[0];
+                  console.log('   Latest Match:', matchId);
 
-                  if (participant) {
-                        const matchSummonerId = participant.summonerId;
-                        console.log('   ✅ Found Summoner ID from Match:', matchSummonerId);
-
-                        // 5. League v4 with Match Summoner ID
-                        console.log('   Testing League v4 with Match Summoner ID...');
-                        const leagueUrl = `https://${PLATFORM}.api.riotgames.com/lol/league/v4/entries/by-summoner/${matchSummonerId}`;
-                        try {
-                              const lRes = await axios.get(leagueUrl, { headers: { 'X-Riot-Token': API_KEY } });
-                              console.log('   ✅ SUCCESS: Fetched League Entries using Match ID.');
-                              console.log('   -> Entries:', lRes.data.length);
-                        } catch (error: any) {
-                              console.error(`   ❌ FAILED to fetch League with Match ID: ${error.response?.status} ${error.response?.statusText}`);
-                        }
+                  const detailUrl = `https://europe.api.riotgames.com/lol/match/v5/matches/${matchId}`;
+                  const detailRes = await axios.get(detailUrl, { headers: { 'X-Riot-Token': API_KEY } });
+                  const p = detailRes.data.info.participants.find((p: any) => p.puuid === puuid);
+                  console.log('   Summoner ID in Match:', p.summonerId);
+                  
+                  if (p.summonerId !== failingId) {
+                        console.log('   ⚠️  ID MISMATCH! The ID in the match is different from the failing one.');
+                        console.log('   Failing:', failingId);
+                        console.log('   Fresh:  ', p.summonerId);
                   } else {
-                        console.error('   ❌ Could not find participant in match.');
+                        console.log('   IDs match.');
                   }
 
-            } catch (error: any) {
-                  console.error(`   ❌ FAILED: ${error.response?.status} ${error.response?.statusText}`);
-                  console.error('   -> URL:', error.config?.url);
+            } catch (e: any) {
+                  console.error('   Failed in Step 4:', e.message);
             }
 
-      } catch (error) {
-            console.error('Unexpected error:', error);
+      } catch (e) {
+            console.error(e);
       }
 }
 
