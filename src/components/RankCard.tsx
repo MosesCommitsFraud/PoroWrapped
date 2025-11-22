@@ -38,13 +38,16 @@ export default function RankCard({ queueType, tier, rank, lp, wins, losses, hotS
       return (
             <Card className="flex flex-col gap-4 p-4 bg-card/50 border-white/5">
                   <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-black/30 rounded-full flex items-center justify-center relative">
-                              {/* Placeholder for Rank Icon */}
-                              <span className={`font-bold text-xl ${tierColor}`}>{tier[0]}</span>
-                              {hotStreak && (
-                                    <div className="absolute -top-1 -right-1 text-lg" title="Hot Streak">🔥</div>
-                              )}
-                        </div>
+                  <div className="w-16 h-16 relative">
+                        <img 
+                              src={`https://opgg-static.akamaized.net/images/medals_new/${tier.toLowerCase()}.png`} 
+                              alt={tier}
+                              className="w-full h-full object-contain"
+                        />
+                        {hotStreak && (
+                              <div className="absolute -top-1 -right-1 text-lg" title="Hot Streak">🔥</div>
+                        )}
+                  </div>
                         <div>
                               <h3 className="text-sm text-muted font-medium uppercase tracking-wider flex items-center gap-2">
                                     {queueType}

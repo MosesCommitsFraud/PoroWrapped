@@ -140,3 +140,9 @@ export async function testRankFetch() {
             return false;
       }
 }
+
+export async function getLatestDataDragonVersion() {
+      const url = 'https://ddragon.leagueoflegends.com/api/versions.json';
+      const versions = await axios.get<string[]>(url);
+      return versions.data[0];
+}

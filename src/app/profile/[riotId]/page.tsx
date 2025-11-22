@@ -1,5 +1,5 @@
 import React from 'react';
-import { getAccountByRiotID, getSummonerByPUUID, getLeagueEntries, getMatchIds, getMatchDetails, aggregateStats, getChampionMastery, testRankFetch } from '@/lib/riot-api';
+import { getAccountByRiotID, getSummonerByPUUID, getLeagueEntries, getMatchIds, getMatchDetails, aggregateStats, getChampionMastery, testRankFetch, getLatestDataDragonVersion } from '@/lib/riot-api';
 import RankCard from '@/components/RankCard';
 import MatchHistory from '@/components/MatchHistory';
 import ChampionStats from '@/components/ChampionStats';
@@ -27,6 +27,8 @@ export default async function ProfilePage({ params }: PageProps) {
       }
 
       try {
+            // Get latest Data Dragon version first
+            const ddragonVersion = await getLatestDataDragonVersion().catch(() => '14.23.1');
             const account = await getAccountByRiotID(gameName, tagLine);
             const summoner = await getSummonerByPUUID(account.puuid);
 
@@ -109,7 +111,7 @@ export default async function ProfilePage({ params }: PageProps) {
                                     <div className="relative">
                                           <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-primary">
                                                 <img
-                                                      src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/profileicon/${summoner.profileIconId}.png`}
+                                                      src={`https://ddragon.leagueoflegends.com/cdn/${ddragonVersion}/img/profileicon/${summoner.profileIconId}.png`}
                                                       alt="Profile Icon"
                                                       className="w-full h-full object-cover"
                                                 />
@@ -207,7 +209,7 @@ export default async function ProfilePage({ params }: PageProps) {
                                           </div>
                                     )}
 
-                                    <ChampionStats stats={championStats} />
+                                    <ChampionStats stats={championStats} version={ddragonVersion} />
                                     <RecentlyPlayedWith players={playedWith} />
                               </div>
 
@@ -215,7 +217,7 @@ export default async function ProfilePage({ params }: PageProps) {
                               <div className="lg:col-span-3 space-y-4">
                                     <h2 className="text-xl font-bold mb-4">Match History</h2>
                                     {matches.map((match) => (
-                                          <MatchHistory key={match.metadata.matchId} match={match} puuid={account.puuid} />
+                                          <MatchHistory key={match.metadata.matchId} match={match} puuid={account.puuid} version={ddragonVersion} />
                                     ))}
                               </div>
                         </div>

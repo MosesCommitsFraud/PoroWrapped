@@ -10,9 +10,10 @@ interface ChampionStatsProps {
             deaths: number;
             assists: number;
       }[];
+      version: string;
 }
 
-export default function ChampionStats({ stats }: ChampionStatsProps) {
+export default function ChampionStats({ stats, version }: ChampionStatsProps) {
       return (
             <Card className="p-4 space-y-4">
                   <h3 className="font-bold text-lg text-primary">Champion Stats</h3>
@@ -26,7 +27,7 @@ export default function ChampionStats({ stats }: ChampionStatsProps) {
                                           <div className="flex items-center gap-3">
                                                 <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10">
                                                       <img
-                                                            src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/champion/${champ.name}.png`}
+                                                            src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ.name}.png`}
                                                             alt={champ.name}
                                                             className="w-full h-full object-cover"
                                                       />

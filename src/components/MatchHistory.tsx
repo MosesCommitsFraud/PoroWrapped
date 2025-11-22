@@ -8,12 +8,13 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 interface MatchProps {
       match: any;
       puuid: string;
+      version: string;
 }
 
 // Simple cache for static data
 const staticDataCache: { spells: any; runes: any } = { spells: null, runes: null };
 
-export default function MatchHistory({ match, puuid }: MatchProps) {
+export default function MatchHistory({ match, puuid, version }: MatchProps) {
       const [expanded, setExpanded] = useState(false);
       const [spells, setSpells] = useState<any>(null);
       const [runes, setRunes] = useState<any>(null);
@@ -21,19 +22,19 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
       useEffect(() => {
             const fetchData = async () => {
                   if (!staticDataCache.spells) {
-                        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/14.23.1/data/en_US/summoner.json');
+                        const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/summoner.json`);
                         const data = await res.json();
                         staticDataCache.spells = data.data;
                   }
                   if (!staticDataCache.runes) {
-                        const res = await fetch('https://ddragon.leagueoflegends.com/cdn/14.23.1/data/en_US/runesReforged.json');
+                        const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/runesReforged.json`);
                         staticDataCache.runes = await res.json();
                   }
                   setSpells(staticDataCache.spells);
                   setRunes(staticDataCache.runes);
             };
             fetchData();
-      }, []);
+      }, [version]);
 
       const participant = match.info.participants.find((p: any) => p.puuid === puuid);
       if (!participant) return null;
@@ -50,7 +51,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
             if (!spells) return null;
             for (const key in spells) {
                   if (spells[key].key == spellId) {
-                        return `https://ddragon.leagueoflegends.com/cdn/14.23.1/img/spell/${spells[key].id}.png`;
+                        return `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${spells[key].id}.png`;
                   }
             }
             return null;
@@ -95,7 +96,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
                                     <div className="relative w-12 h-12">
                                           <div className="w-12 h-12 bg-black rounded-full overflow-hidden border border-white/10">
                                                 <img
-                                                      src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/champion/${participant.championName}.png`}
+                                                      src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${participant.championName}.png`}
                                                       alt={participant.championName}
                                                       className="w-full h-full object-cover"
                                                 />
@@ -136,7 +137,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
                                                 const item = participant[`item${i}`];
                                                 return item ? (
                                                       <div key={i} className="w-6 h-6 bg-black rounded border border-white/10 overflow-hidden">
-                                                            <img src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/item/${item}.png`} alt="" className="w-full h-full" />
+                                                            <img src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${item}.png`} alt="" className="w-full h-full" />
                                                       </div>
                                                 ) : <div key={i} className="w-6 h-6 bg-white/5 rounded" />
                                           })}
@@ -156,6 +157,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
                                           maxDamage={Math.max(...match.info.participants.map((p: any) => p.totalDamageDealtToChampions))}
                                           gameDuration={match.info.gameDuration}
                                           runes={runes}
+                                          version={version}
                                     />
 
                                     {/* Objectives */}
@@ -190,6 +192,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
                                           maxDamage={Math.max(...match.info.participants.map((p: any) => p.totalDamageDealtToChampions))}
                                           gameDuration={match.info.gameDuration}
                                           runes={runes}
+                                          version={version}
                                     />
                               </div>
                         </div>
@@ -198,7 +201,7 @@ export default function MatchHistory({ match, puuid }: MatchProps) {
       );
 }
 
-function TeamTable({ participants, teamName, maxDamage, gameDuration, runes }: { participants: any[], teamName: string, maxDamage: number, gameDuration: number, runes: any }) {
+function TeamTable({ participants, teamName, maxDamage, gameDuration, runes, version }: { participants: any[], teamName: string, maxDamage: number, gameDuration: number, runes: any, version: string }) {
       const isBlue = teamName === "Blue Team";
       const headerColor = isBlue ? "text-blue-400" : "text-red-400";
 
@@ -243,7 +246,7 @@ function TeamTable({ participants, teamName, maxDamage, gameDuration, runes }: {
                                           {/* Champion & Name */}
                                           <div className="flex items-center gap-2 w-[140px] flex-shrink-0">
                                                 <div className="relative">
-                                                      <img src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/champion/${p.championName}.png`} className="w-8 h-8 rounded" alt={p.championName} />
+                                                      <img src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${p.championName}.png`} className="w-8 h-8 rounded" alt={p.championName} />
                                                       <div className="absolute -bottom-1 -right-1 bg-black text-[10px] px-1 rounded border border-white/10 leading-none">
                                                             {p.champLevel}
                                                       </div>
@@ -290,7 +293,7 @@ function TeamTable({ participants, teamName, maxDamage, gameDuration, runes }: {
                                                       {[0, 1, 2, 3, 4, 5, 6].map(i => {
                                                             const item = p[`item${i}`];
                                                             return item ? (
-                                                                  <img key={i} src={`https://ddragon.leagueoflegends.com/cdn/14.23.1/img/item/${item}.png`} className="w-4 h-4 rounded border border-white/10" alt="" />
+                                                                  <img key={i} src={`https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${item}.png`} className="w-4 h-4 rounded border border-white/10" alt="" />
                                                             ) : <div key={i} className="w-4 h-4 bg-white/5 rounded" />
                                                       })}
                                                 </div>
