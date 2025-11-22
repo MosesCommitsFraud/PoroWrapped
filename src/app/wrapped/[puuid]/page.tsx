@@ -20,12 +20,15 @@ export default function WrappedPage() {
 
       const hasFetched = useRef(false);
 
+      const CACHE_VERSION = '1.0.1'; // Increment this when stats structure changes
+
       const loadFromCache = () => {
             const cachedData = localStorage.getItem(`poro-wrapped-${puuid}`);
             if (cachedData) {
                   try {
                         const parsed = JSON.parse(cachedData);
-                        if (parsed.stats && parsed.matches) {
+                        // Check version and essential new fields to ensure compatibility
+                        if (parsed.stats && parsed.matches && parsed.version === CACHE_VERSION && parsed.stats.abilityCasts) {
                               setStats(parsed.stats);
                               setMatches(parsed.matches);
                               setLoading(false);
@@ -129,7 +132,8 @@ export default function WrappedPage() {
                                     puuid,
                                     stats: calculatedStats,
                                     matches: fetchedMatches,
-                                    timestamp: Date.now()
+                                    timestamp: Date.now(),
+                                    version: CACHE_VERSION
                               }));
                         } catch (e) {
                               console.error("Failed to save to local storage (likely quota exceeded)", e);
@@ -139,7 +143,8 @@ export default function WrappedPage() {
                                           puuid,
                                           stats: calculatedStats,
                                           matches: [], // Empty matches to save space, but keep structure
-                                          timestamp: Date.now()
+                                          timestamp: Date.now(),
+                                          version: CACHE_VERSION
                                     }));
                               } catch (retryError) {
                                     console.error("Failed to save even just stats", retryError);

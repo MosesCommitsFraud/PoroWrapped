@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { AggregateStats } from '@/lib/stats-processor';
-import Slide from './Slide';
-import IntroSlide from './slides/IntroSlide';
-import ChampionsSlide from './slides/ChampionsSlide';
-import ItemsSlide from './slides/ItemsSlide';
-import StatsSlide from './slides/StatsSlide';
-import CombatSlide from './slides/CombatSlide';
-import ObjectivesSlide from './slides/ObjectivesSlide';
-import SocialSlide from './slides/SocialSlide';
-import ActivitySlide from './slides/ActivitySlide';
-import SummarySlide from './slides/SummarySlide';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Slides
+import SlideIntro from './SlideIntro';
+import SlideCombat from './SlideCombat';
+import SlideChampions from './SlideChampions';
+import SlideGameplay from './SlideGameplay';
+import SlideObjectives from './SlideObjectives';
+import SlideSocial from './SlideSocial';
+import SlideMisc from './SlideMisc';
+import SlideHeatmap from './SlideHeatmap';
+import SlideItems from './SlideItems';
 
 interface WrappedSlidesProps {
       stats: AggregateStats;
@@ -22,33 +24,31 @@ export default function WrappedSlides({ stats }: WrappedSlidesProps) {
       const [currentSlide, setCurrentSlide] = useState(0);
       const [direction, setDirection] = useState(0);
 
-      // We don't pass onNext/onPrev to children anymore as navigation is handled here
-      // But we can pass them if we want internal buttons. For now, let's keep it simple.
       const slides = [
-            <IntroSlide key="intro" stats={stats} />,
-            <ChampionsSlide key="champs" stats={stats} />,
-            <ItemsSlide key="items" stats={stats} />,
-            <CombatSlide key="combat" stats={stats} />,
-            <ObjectivesSlide key="objectives" stats={stats} />,
-            <SocialSlide key="social" stats={stats} />,
-            <ActivitySlide key="activity" stats={stats} />,
-            <StatsSlide key="stats" stats={stats} />,
-            <SummarySlide key="summary" stats={stats} />,
+            { id: 'intro', component: <SlideIntro stats={stats} /> },
+            { id: 'combat', component: <SlideCombat stats={stats} /> },
+            { id: 'champions', component: <SlideChampions stats={stats} /> },
+            { id: 'gameplay', component: <SlideGameplay stats={stats} /> },
+            { id: 'objectives', component: <SlideObjectives stats={stats} /> },
+            { id: 'social', component: <SlideSocial stats={stats} /> },
+            { id: 'heatmap', component: <SlideHeatmap stats={stats} /> },
+            { id: 'items', component: <SlideItems stats={stats} /> },
+            { id: 'misc', component: <SlideMisc stats={stats} /> },
       ];
 
-      const nextSlide = () => {
+      const nextSlide = useCallback(() => {
             if (currentSlide < slides.length - 1) {
                   setDirection(1);
                   setCurrentSlide(prev => prev + 1);
             }
-      };
+      }, [currentSlide, slides.length]);
 
-      const prevSlide = () => {
+      const prevSlide = useCallback(() => {
             if (currentSlide > 0) {
                   setDirection(-1);
                   setCurrentSlide(prev => prev - 1);
             }
-      };
+      }, [currentSlide]);
 
       // Keyboard navigation
       useEffect(() => {
@@ -58,45 +58,78 @@ export default function WrappedSlides({ stats }: WrappedSlidesProps) {
             };
             window.addEventListener('keydown', handleKeyDown);
             return () => window.removeEventListener('keydown', handleKeyDown);
-      }, [currentSlide]);
+      }, [nextSlide, prevSlide]);
+
+      const variants = {
+            enter: (direction: number) => ({
+                  x: direction > 0 ? 1000 : -1000,
+                  opacity: 0
+            }),
+            center: {
+                  zIndex: 1,
+                  x: 0,
+                  opacity: 1
+            },
+            exit: (direction: number) => ({
+                  zIndex: 0,
+                  x: direction < 0 ? 1000 : -1000,
+                  opacity: 0
+            })
+      };
 
       return (
-            <div className="relative w-full h-screen bg-[#0a0a0c] overflow-hidden">
-                  {/* Progress Bar */}
-                  <div className="absolute top-0 left-0 w-full h-1 flex gap-1 z-50 px-2 pt-2">
-                        {slides.map((_, index) => (
-                              <div
-                                    key={index}
-                                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${index <= currentSlide ? 'bg-white' : 'bg-gray-700'
-                                          }`}
-                              />
-                        ))}
-                  </div>
+            <div className="relative w-full h-screen overflow-hidden bg-[#0a0a0c] flex items-center justify-center">
+                  {/* Background Elements */}
+                  <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-5 pointer-events-none"></div>
+                  <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-500/10 rounded-full blur-[120px]"></div>
+                  <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px]"></div>
 
-                  {/* Slides */}
-                  <div className="relative w-full h-full">
-                        {slides.map((slide, index) => (
-                              <Slide key={index} isActive={currentSlide === index} direction={direction}>
-                                    {slide}
-                              </Slide>
-                        ))}
+                  {/* Slide Content */}
+                  <div className="relative w-full max-w-6xl h-full max-h-[90vh] flex items-center justify-center p-4">
+                        <AnimatePresence initial={false} custom={direction} mode="wait">
+                              <motion.div
+                                    key={currentSlide}
+                                    custom={direction}
+                                    variants={variants}
+                                    initial="enter"
+                                    animate="center"
+                                    exit="exit"
+                                    transition={{
+                                          x: { type: "spring", stiffness: 300, damping: 30 },
+                                          opacity: { duration: 0.2 }
+                                    }}
+                                    className="w-full h-full flex items-center justify-center"
+                              >
+                                    {slides[currentSlide].component}
+                              </motion.div>
+                        </AnimatePresence>
                   </div>
 
                   {/* Navigation Controls */}
-                  <div className="absolute bottom-8 left-0 w-full flex justify-between px-12 z-50">
+                  <div className="absolute bottom-8 left-0 right-0 flex justify-center items-center gap-8 z-50">
                         <button
                               onClick={prevSlide}
                               disabled={currentSlide === 0}
-                              className="p-2 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-0 transition-all"
+                              className={`p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all ${currentSlide === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
                         >
-                              <ChevronLeft className="w-8 h-8" />
+                              <ChevronLeft size={24} />
                         </button>
+
+                        <div className="flex gap-2">
+                              {slides.map((_, index) => (
+                                    <div
+                                          key={index}
+                                          className={`h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? 'w-8 bg-yellow-500' : 'w-2 bg-gray-700'}`}
+                                    />
+                              ))}
+                        </div>
+
                         <button
                               onClick={nextSlide}
                               disabled={currentSlide === slides.length - 1}
-                              className="p-2 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-0 transition-all"
+                              className={`p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all ${currentSlide === slides.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100'}`}
                         >
-                              <ChevronRight className="w-8 h-8" />
+                              <ChevronRight size={24} />
                         </button>
                   </div>
             </div>
