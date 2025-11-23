@@ -52,7 +52,7 @@ export default function WrappedInput() {
                   <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full border-button-light text-black font-semibold py-4 rounded-full transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                         {loading ? (
                               <>
